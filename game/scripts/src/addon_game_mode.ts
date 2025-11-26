@@ -164,6 +164,44 @@ Object.assign(getfenv(), {
         } else {
             print("[GameMode] 传送门创建失败");
         }
+        
+        // ⭐ 监听玩家连接事件，加载装备仓库
+        ListenToGameEvent("player_connect_full", (event) => {
+            const playerId = event.PlayerID as PlayerID;
+            print(`[GameMode] 玩家${playerId}连接，加载装备仓库...`);
+            
+            // 加载玩家的装备仓库
+            EquipmentVaultSystem.LoadFromPersistentStorage(playerId);
+        }, undefined);
+        
+        // ⭐ 注册装备命令（用于测试）
+        Convars.RegisterCommand("equip", (itemIndex: string) => {
+            const player = Convars.GetCommandClient();
+            if (!player) return;
+            
+            const playerId = player.GetPlayerID();
+            const index = parseInt(itemIndex);
+            
+            if (EquipmentVaultSystem.EquipItem(playerId, index)) {
+                print(`[GameMode] ✓ 玩家${playerId}装备了索引${index}的装备`);
+            } else {
+                print(`[GameMode] ❌ 装备失败`);
+            }
+        }, "装备仓库中的装备 (使用索引)", 0);
+        
+        // ⭐ 查看仓库命令（用于测试）
+        Convars.RegisterCommand("vault", () => {
+            const player = Convars.GetCommandClient();
+            if (!player) return;
+            
+            const playerId = player.GetPlayerID();
+            const vault = EquipmentVaultSystem.GetVault(playerId);
+            
+            print(`[GameMode] 玩家${playerId}的仓库 (${vault.length}件装备):`);
+            vault.forEach((item, index) => {
+                print(`  [${index}] ${item.name} - ${item.type} (${item.attribute} +${item.value})`);
+            });
+        }, "查看装备仓库", 0);
 
         print("[GameMode] All modules loaded!");
         print("=".repeat(50));
