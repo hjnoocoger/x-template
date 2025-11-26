@@ -11,12 +11,16 @@ import { ShadowFiendBoss } from "./boss/shadow_fiend_boss";
 import { LootSystem } from "./loot_system";
 import { DungeonDifficulty, DIFFICULTY_NAMES, DIFFICULTY_MULTIPLIERS } from "./reward_config";
 import { EXTERNAL_REWARD_POOL, ExternalRewardItem } from "./external_reward_pool";
+import { EquipmentVaultSystem } from "../systems/equipment_vault_system";
 export class SimpleDungeon {
     private monsters: CDOTA_BaseNPC[] = [];
     private currentRoom: number = 0;
     private playerId: PlayerID | undefined;
     private bossManager: ShadowFiendBoss | undefined;
     private currentDifficulty: DungeonDifficulty = DungeonDifficulty.NORMAL_1;  // ⭐ 默认普通1星
+    
+    // ⭐ 新增：缓存当前生成的奖励，供客户端选择后使用
+    private currentRewards: ExternalRewardItem[] = [];
 
 
     
@@ -28,6 +32,7 @@ export class SimpleDungeon {
         this.RegisterCommand();
         this.ListenToEvents();
         this.ListenToChatCommand();
+        this.RegisterRewardSelectionListener(); // ⭐ 新增
         
         print("[SimpleDungeon] Ready!   Type -start in chat");
     }
@@ -334,14 +339,15 @@ export class SimpleDungeon {
     const playerId = this.playerId;
     if (!playerId) return;
 
-    const rewards: ExternalRewardItem[] = this.GenerateRewards();
-    print(`[SimpleDungeon] Generated rewards: ${rewards.map(r => r.name).join(", ")}`);
+    // 生成奖励并缓存
+    this.currentRewards = this.GenerateRewards();
+    print(`[SimpleDungeon] Generated rewards: ${this.currentRewards.map(r => r.name).join(", ")}`);
 
     // 发送奖励数据到客户端
     CustomGameEventManager.Send_ServerToPlayer(
         PlayerResource.GetPlayer(playerId)!,
         "show_reward_selection",
-        { rewards } // rewards 必须是 ExternalRewardItem[]
+        { rewards: this.currentRewards }
     );
 }
 
@@ -361,6 +367,49 @@ private GenerateRewards(): ExternalRewardItem[] {
     return rewards;
 }
 
+// ⭐ 新增：注册奖励选择事件监听
+private RegisterRewardSelectionListener(): void {
+    CustomGameEventManager.RegisterListener("player_select_reward", (userId, event) => {
+        const playerId = event.PlayerID as PlayerID;
+        const rewardIndex = event.rewardIndex as number;
+        
+        print(`[SimpleDungeon] 玩家${playerId}选择了奖励索引：${rewardIndex}`);
+        
+        // ⭐ 验证是否为当前副本的玩家
+        if (playerId !== this.playerId) {
+            print(`[SimpleDungeon] ❌ 玩家${playerId}不是当前副本的玩家（应为${this.playerId}）`);
+            return;
+        }
+        
+        // 验证索引有效性
+        if (rewardIndex < 0 || rewardIndex >= this.currentRewards.length) {
+            print(`[SimpleDungeon] ❌ 无效的奖励索引：${rewardIndex}`);
+            return;
+        }
+        
+        // 验证奖励是否已被选择
+        if (this.currentRewards.length === 0) {
+            print(`[SimpleDungeon] ❌ 奖励已被选择或不存在`);
+            return;
+        }
+        
+        const selectedReward = this.currentRewards[rewardIndex];
+        
+        // ⭐ 保存到装备仓库
+        EquipmentVaultSystem.SaveToVault(playerId, selectedReward);
+        
+        // 通知玩家
+        GameRules.SendCustomMessage(
+            `<font color='#FFD700'>✓ 获得局外装备：${selectedReward.name} (${selectedReward.attribute} +${selectedReward.value})</font>`,
+            playerId,
+            0
+        );
+        
+        // 清空缓存（单人副本，选择后立即清空）
+        this.currentRewards = [];
+    });
+}
+
 // 在 OnEntityKilled 方法中触发奖励逻辑：击败 Boss 后调用 TriggerRewardSelection
 private OnEntityKilled(event: EntityKilledEvent): void {
     const killedUnit = EntIndexToHScript(event.entindex_killed);
@@ -373,11 +422,21 @@ private OnEntityKilled(event: EntityKilledEvent): void {
 
         if (this.monsters.length === 0) {
             print(`[SimpleDungeon] 所有怪物已被击杀，房间 ${this.currentRoom} 清空`);
-            this.OnRoomCleared();
-
-            if (this.currentRoom === 3) {
+            
+            // ⭐ Boss 房间特殊处理
+            if (this.currentRoom === 3 && this.playerId !== undefined) {
+                // 1. 触发 Boss 掉落（物品掉落到地面 + 金币）
+                LootSystem.DropBossLoot(
+                    killedUnit as CDOTA_BaseNPC, 
+                    this.currentDifficulty, 
+                    this.playerId
+                );
+                
+                // 2. 触发奖励选择界面（局外装备奖励）
                 this.TriggerRewardSelection();
             }
+            
+            this.OnRoomCleared();
         }
     }
 }

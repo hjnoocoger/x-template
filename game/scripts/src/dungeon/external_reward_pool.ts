@@ -10,6 +10,14 @@ export enum ExternalItemType {
     TRINKET = "饰品"
 }
 
+// 装备属性类型枚举
+export enum EquipmentAttribute {
+    STRENGTH = "力量",
+    AGILITY = "敏捷",
+    INTELLIGENCE = "智力",
+    ARMOR = "护甲"
+}
+
 // 局外装备定义
 export interface ExternalRewardItem {
     name: string;        // 装备名称
@@ -21,12 +29,12 @@ export interface ExternalRewardItem {
 
 // 局外奖励池 - 初始装备列表
 export const EXTERNAL_REWARD_POOL: ExternalRewardItem[] = [
-    { name: "铁剑", type: ExternalItemType.WEAPON, icon: "file://{images}/custom_game/sword.png", attribute: "力量", value: 5 },
-    { name: "钢剑", type: ExternalItemType.WEAPON, icon: "file://{images}/custom_game/sword_steel.png", attribute: "力量", value: 8 },
-    { name: "皮甲", type: ExternalItemType.ARMOR, icon: "file://{images}/custom_game/armor.png", attribute: "护甲", value: 3 },
-    { name: "链甲", type: ExternalItemType.ARMOR, icon: "file://{images}/custom_game/armor_chain.png", attribute: "护甲", value: 6 },
-    { name: "轻型头盔", type: ExternalItemType.HELMET, icon: "file://{images}/custom_game/helmet.png", attribute: "护甲", value: 2 },
-    { name: "重型头盔", type: ExternalItemType.HELMET, icon: "file://{images}/custom_game/helmet_heavy.png", attribute: "护甲", value: 4 },
-    { name: "法力项链", type: ExternalItemType.NECKLACE, icon: "file://{images}/custom_game/necklace.png", attribute: "智力", value: 10 },
-    { name: "敏捷戒指", type: ExternalItemType.RING, icon: "file://{images}/custom_game/ring.png", attribute: "敏捷", value: 7 }
+    { name: "铁剑", type: ExternalItemType.WEAPON, icon: "file://{images}/custom_game/sword.png", attribute: EquipmentAttribute.STRENGTH, value: 5 },
+    { name: "钢剑", type: ExternalItemType.WEAPON, icon: "file://{images}/custom_game/sword_steel.png", attribute: EquipmentAttribute.STRENGTH, value: 8 },
+    { name: "皮甲", type: ExternalItemType.ARMOR, icon: "file://{images}/custom_game/armor.png", attribute: EquipmentAttribute.ARMOR, value: 3 },
+    { name: "链甲", type: ExternalItemType.ARMOR, icon: "file://{images}/custom_game/armor_chain.png", attribute: EquipmentAttribute.ARMOR, value: 6 },
+    { name: "轻型头盔", type: ExternalItemType.HELMET, icon: "file://{images}/custom_game/helmet.png", attribute: EquipmentAttribute.ARMOR, value: 2 },
+    { name: "重型头盔", type: ExternalItemType.HELMET, icon: "file://{images}/custom_game/helmet_heavy.png", attribute: EquipmentAttribute.ARMOR, value: 4 },
+    { name: "法力项链", type: ExternalItemType.NECKLACE, icon: "file://{images}/custom_game/necklace.png", attribute: EquipmentAttribute.INTELLIGENCE, value: 10 },
+    { name: "敏捷戒指", type: ExternalItemType.RING, icon: "file://{images}/custom_game/ring.png", attribute: EquipmentAttribute.AGILITY, value: 7 }
 ];
