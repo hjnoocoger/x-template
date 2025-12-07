@@ -114,9 +114,9 @@ export class DungeonManager {
         const hero = PlayerResource.GetSelectedHeroEntity(playerId);
         if (!hero) return;
         
-        // 获取副本配置和入口位置
-        const config = (instance as any).config;
-        const generator = (instance as any).generator;
+        // 获取副本配置和生成器
+        const config = instance.GetMapData();
+        const generator = instance.GetGenerator();
         
         let entrancePos: Vector;
         
