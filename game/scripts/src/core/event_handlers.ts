@@ -15,6 +15,16 @@ interface RequestEnterDungeonEvent {
     dungeonId: string;
 }
 
+interface DungeonListData {
+    id: string;
+    name: string;
+    description: string;
+}
+
+interface ShowDungeonMenuData {
+    dungeons: DungeonListData[];
+}
+
 // 最后菜单触发时间记录
 const lastMenuTriggerTime: { [key: number]: number } = {};
 
@@ -106,7 +116,7 @@ export class EventHandlers {
                         };
                     });
                     
-                    CustomGameEventManager.Send_ServerToPlayer(
+                    CustomGameEventManager.Send_ServerToPlayer<ShowDungeonMenuData>(
                         PlayerResource.GetPlayer(i)!,
                         "show_dungeon_menu",
                         { dungeons: dungeonList }

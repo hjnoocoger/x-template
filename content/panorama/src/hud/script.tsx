@@ -177,6 +177,8 @@ const DungeonMenu: FC<{ visible: boolean; dungeons: DungeonInfo[]; onClose: () =
         $.Msg(`[DungeonMenu] 选择副本: ${dungeonId}`);
         
         // 发送进入副本请求到服务端
+        // Note: GameEvents.SendCustomGameEventToServer is part of Panorama's API
+        // and doesn't have complete TypeScript definitions, hence the ts-ignore
         // @ts-ignore
         GameEvents.SendCustomGameEventToServer('request_enter_dungeon', {
             PlayerID: Players.GetLocalPlayer(),
@@ -323,11 +325,13 @@ const Root: FC = () => {
             $.Msg('[Root] 收到 show_dungeon_menu 事件');
             $.Msg(`[Root] 副本数据: ${JSON.stringify(data)}`);
             
-            if (data && data.dungeons) {
-                setDungeonList(data.dungeons);
-            } else {
-                // 如果没有数据，使用空列表
+            // 验证并设置副本列表，确保数据有效
+            const dungeons = data?.dungeons ?? [];
+            if (!Array.isArray(dungeons)) {
+                $.Msg('[Root] 警告: 副本数据格式错误，使用空列表');
                 setDungeonList([]);
+            } else {
+                setDungeonList(dungeons);
             }
             
             setMenuVisible(true);
