@@ -4,6 +4,7 @@ import 'panorama-polyfill-x/lib/console';
 import 'panorama-polyfill-x/lib/timers';
 import { ExternalRewardItem } from "./../../../../game/scripts/src/dungeon/external_reward_pool";
 import { VaultUI } from './vault_ui';
+import { DungeonInfo, ShowDungeonMenuEvent } from './../../../../shared/dungeon_events';
 
 import '../utils/hide-default-hud';
 import { RewardSelection } from "./reward_selection";
@@ -162,7 +163,7 @@ const CameraOverlay: FC = () => {
 
 const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
     const [selectedDungeon, setSelectedDungeon] = useState<string | null>(null);
-    const [dungeonList, setDungeonList] = useState<Array<{ id: string; name: string }>>([]);
+    const [dungeonList, setDungeonList] = useState<DungeonInfo[]>([]);
 
     useEffect(() => {
         if (visible) {
@@ -171,7 +172,7 @@ const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, o
     }, [visible]);
 
     useEffect(() => {
-        const listener = GameEvents.Subscribe('show_dungeon_menu', (data: any) => {
+        const listener = GameEvents.Subscribe('show_dungeon_menu', (data: ShowDungeonMenuEvent) => {
             $.Msg('[DungeonMenu] 收到副本列表数据:', data);
             if (data && data.dungeons) {
                 setDungeonList(data.dungeons);
@@ -608,7 +609,7 @@ const Root: FC = () => {
     useEffect(() => {
         $.Msg('[Root] 注册事件监听器');
         
-        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (data: any) => {
+        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (data: ShowDungeonMenuEvent) => {
             $.Msg('[Root] 收到 show_dungeon_menu 事件');
             setMenuVisible(true);
         });

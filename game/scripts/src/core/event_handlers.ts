@@ -7,6 +7,7 @@ import { ClassSystem } from '../systems/player/class_system';
 import { ExternalRewardItem, ExternalItemType, EquipmentAttribute } from '../dungeon/external_reward_pool';
 import { GetAllDungeonIds, GetDungeonConfig } from '../dungeons/configs/index';
 import { GetDungeonManager } from '../dungeons/DungeonManager';
+import { ShowDungeonMenuEvent, SelectDungeonEvent } from '../../../shared/dungeon_events';
 
 // 最后菜单触发时间记录
 const lastMenuTriggerTime: { [key: number]: number } = {};
@@ -90,15 +91,17 @@ export class EventHandlers {
                     lastMenuTriggerTime[i] = currentTime;
                     
                     // 获取所有副本配置并发送给客户端
-                    const dungeonList = GetAllDungeonIds().map(id => ({
-                        id: id,
-                        name: GetDungeonConfig(id)?.mapName || id
-                    }));
+                    const eventData: ShowDungeonMenuEvent = {
+                        dungeons: GetAllDungeonIds().map(id => ({
+                            id: id,
+                            name: GetDungeonConfig(id)?.mapName || id
+                        }))
+                    };
                     
                     CustomGameEventManager.Send_ServerToPlayer(
                         PlayerResource.GetPlayer(i)!,
                         "show_dungeon_menu",
-                        { dungeons: dungeonList }
+                        eventData
                     );
                 }
             }
@@ -159,7 +162,7 @@ export class EventHandlers {
      * 注册副本相关事件
      */
     private static RegisterDungeonEvents(): void {
-        CustomGameEventManager.RegisterListener("select_dungeon", (userId, event: any) => {
+        CustomGameEventManager.RegisterListener("select_dungeon", (userId, event: SelectDungeonEvent) => {
             const playerId = event.PlayerID as PlayerID;
             const dungeonType = event.dungeon_type as string;
             const difficulty = event.difficulty as string;

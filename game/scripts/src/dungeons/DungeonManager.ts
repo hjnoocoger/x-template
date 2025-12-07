@@ -13,6 +13,7 @@ export class DungeonManager {
     private instances: Map<string, DungeonInstance> = new Map();
     private playerDungeonMap: Map<PlayerID, string> = new Map();
     private nextInstanceId: number = 1;
+    private instancePositionCounter: number = 0;  // 用于计算副本位置偏移
     
     private constructor() {
         print('[DungeonManager] 副本管理器初始化');
@@ -42,8 +43,10 @@ export class DungeonManager {
         const instanceId = `${dungeonId}_${this.nextInstanceId++}`;
         
         // 计算副本生成位置：使用固定中心点，多个实例在X轴偏移
-        const instanceCount = this.instances.size;
-        const offsetX = instanceCount * DUNGEON_INSTANCE_OFFSET_X;
+        // 使用单调递增的计数器确保位置唯一，即使实例被销毁也不会重复
+        const offsetX = this.instancePositionCounter * DUNGEON_INSTANCE_OFFSET_X;
+        this.instancePositionCounter++;
+        
         const spawnPosition = Vector(
             DUNGEON_SPAWN_CENTER.x + offsetX,
             DUNGEON_SPAWN_CENTER.y,
