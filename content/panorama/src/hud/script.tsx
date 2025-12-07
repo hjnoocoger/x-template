@@ -162,6 +162,30 @@ const CameraOverlay: FC = () => {
 
 const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
     const [selectedDungeon, setSelectedDungeon] = useState<string | null>(null);
+    const [dungeonList, setDungeonList] = useState<Array<{id: string, name: string, description: string}>>([]);
+
+    useEffect(() => {
+        if (!visible) return;
+
+        // 监听服务端发送的副本列表数据
+        const listener = GameEvents.Subscribe('show_dungeon_menu', (data: any) => {
+            $.Msg(`[DungeonMenu] 收到副本数据:`, data);
+            
+            if (data.dungeonList && Array.isArray(data.dungeonList)) {
+                setDungeonList(data.dungeonList);
+                $.Msg(`[DungeonMenu] 加载 ${data.dungeonList.length} 个副本`);
+            } else if (data.dungeonList) {
+                // 如果是对象格式，转换为数组
+                const list = Object.values(data.dungeonList);
+                setDungeonList(list as any);
+                $.Msg(`[DungeonMenu] 从对象转换: ${list.length} 个副本`);
+            }
+        });
+
+        return () => {
+            GameEvents.Unsubscribe(listener);
+        };
+    }, [visible]);
 
     const selectDungeon = (dungeonType: string) => {
         $.Msg(`[DungeonMenu] 点击了副本: ${dungeonType}`);
@@ -454,28 +478,33 @@ const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, o
                     marginBottom: '20px' 
                 }} />
                 
-                {/* 副本A */}
-                <Panel style={{
-                    height: '100px',
-                    backgroundColor: '#00ff00',
-                    border: '3px solid #ffffff',
-                    marginBottom: '15px',
-                    padding: '15px',
-                    flowChildren: 'down',
-                }} onactivate={() => selectDungeon('A')}>
-                    <Label text="副本 A" style={{ fontSize: '32px', color: '#000000' }} />
-                    <Label text="点击选择难度" style={{ fontSize: '20px', color: '#000000' }} />
-                </Panel>
-                
-                {/* 副本B */}
-                <Panel style={{
-                    height: '80px',
-                    backgroundColor: '#666666',
-                    marginBottom: '10px',
-                    padding: '15px',
-                }} onactivate={() => selectDungeon('B')}>
-                    <Label text="副本 B (测试开放)" style={{ fontSize: '28px', color: '#ffffff' }} />
-                </Panel>
+                {/* 动态渲染副本列表 */}
+                {dungeonList.length === 0 ? (
+                    <Label text="正在加载副本列表..." style={{ fontSize: '24px', color: '#ffffff', textAlign: 'center' }} />
+                ) : (
+                    dungeonList.map((dungeon, index) => (
+                        <Panel key={dungeon.id} style={{
+                            height: '80px',
+                            backgroundColor: index === 0 ? '#00ff00' : '#4a4a7a',
+                            border: '2px solid #ffffff',
+                            marginBottom: '10px',
+                            padding: '15px',
+                            flowChildren: 'down',
+                        }} onactivate={() => {
+                            $.Msg(`[DungeonMenu] 选择副本: ${dungeon.id}`);
+                            // 直接进入副本，不选择难度
+                            // @ts-ignore
+                            GameEvents.SendCustomGameEventToServer('request_enter_dungeon', {
+                                PlayerID: Players.GetLocalPlayer(),
+                                dungeonId: dungeon.id
+                            });
+                            onClose();
+                        }}>
+                            <Label text={dungeon.name} style={{ fontSize: '28px', color: index === 0 ? '#000000' : '#ffffff' }} />
+                            <Label text={dungeon.description} style={{ fontSize: '18px', color: index === 0 ? '#333333' : '#cccccc' }} />
+                        </Panel>
+                    ))
+                )}
                 
                 {/* 关闭按钮 */}
                 <Panel style={{

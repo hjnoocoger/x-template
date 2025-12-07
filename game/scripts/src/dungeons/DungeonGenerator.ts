@@ -222,7 +222,7 @@ private CreateWallTile(position: Vector): void {
         return Vector(
             this.basePosition.x + (gridX - this.mapData.width / 2) * this.mapData.tileSize,
             this.basePosition.y + (gridY - this.mapData.height / 2) * this.mapData.tileSize,
-            this.basePosition.z
+            128  // 使用固定的 Z 轴高度，确保墙壁正确贴地
         );
     }
     
