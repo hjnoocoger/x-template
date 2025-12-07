@@ -166,6 +166,10 @@ interface DungeonInfo {
     description: string;
 }
 
+interface ShowDungeonMenuEvent {
+    dungeons?: DungeonInfo[];
+}
+
 const DungeonMenu: FC<{ visible: boolean; dungeons: DungeonInfo[]; onClose: () => void }> = ({ visible, dungeons, onClose }) => {
     const [selectedDungeon, setSelectedDungeon] = useState<string | null>(null);
 
@@ -210,17 +214,17 @@ const DungeonMenu: FC<{ visible: boolean; dungeons: DungeonInfo[]; onClose: () =
                 }} />
                 
                 {/* 动态渲染副本列表 */}
-                {dungeons.map((dungeon, index) => (
+                {dungeons.map((dungeon) => (
                     <Panel key={dungeon.id} style={{
                         height: '100px',
-                        backgroundColor: index === 0 ? '#00ff00' : '#666666',
-                        border: '3px solid #ffffff',
+                        backgroundColor: '#4a4a6a',
+                        border: '3px solid #8888aa',
                         marginBottom: '15px',
                         padding: '15px',
                         flowChildren: 'down',
                     }} onactivate={() => selectDungeon(dungeon.id)}>
-                        <Label text={dungeon.name} style={{ fontSize: '32px', color: index === 0 ? '#000000' : '#ffffff' }} />
-                        <Label text={dungeon.description} style={{ fontSize: '20px', color: index === 0 ? '#000000' : '#cccccc' }} />
+                        <Label text={dungeon.name} style={{ fontSize: '32px', color: '#ffffff' }} />
+                        <Label text={dungeon.description} style={{ fontSize: '20px', color: '#cccccc' }} />
                     </Panel>
                 ))}
                 
@@ -315,14 +319,14 @@ const Root: FC = () => {
     useEffect(() => {
         $.Msg('[Root] 注册事件监听器');
         
-        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (data: any) => {
+        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (data: ShowDungeonMenuEvent) => {
             $.Msg('[Root] 收到 show_dungeon_menu 事件');
             $.Msg(`[Root] 副本数据: ${JSON.stringify(data)}`);
             
             if (data && data.dungeons) {
                 setDungeonList(data.dungeons);
             } else {
-                // 如果没有数据，使用默认列表（向后兼容）
+                // 如果没有数据，使用空列表
                 setDungeonList([]);
             }
             
