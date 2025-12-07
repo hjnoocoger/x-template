@@ -5,6 +5,7 @@
 import { EquipmentVaultSystem } from '../systems/equipment/vault_system';
 import { ClassSystem } from '../systems/player/class_system';
 import { ExternalRewardItem, ExternalItemType, EquipmentAttribute } from '../dungeon/external_reward_pool';
+import { GetAllDungeonIds, GetDungeonConfig } from '../dungeons/configs/index';
 
 // 最后菜单触发时间记录
 const lastMenuTriggerTime: { [key: number]: number } = {};
@@ -87,10 +88,23 @@ export class EventHandlers {
                     
                     lastMenuTriggerTime[i] = currentTime;
                     
-                    CustomGameEventManager.Send_ServerToPlayer<{}>(
+                    // 获取所有副本配置
+                    const dungeonList = GetAllDungeonIds().map(id => {
+                        const config = GetDungeonConfig(id);
+                        return {
+                            id: id,
+                            name: config?.mapName || id,
+                            description: `副本ID: ${id}`
+                        };
+                    });
+                    
+                    CustomGameEventManager.Send_ServerToPlayer(
                         PlayerResource.GetPlayer(i)!,
                         "show_dungeon_menu",
-                        {}
+                        { 
+                            dungeonList: dungeonList,
+                            count: dungeonList.length 
+                        }
                     );
                 }
             }
