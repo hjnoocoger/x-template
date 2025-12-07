@@ -38,14 +38,8 @@ export function RegisterDungeonCommands(): void {
                 return;
             }
             
-            // 在英雄前方500单位创建副本
-            const heroPos = hero.GetAbsOrigin();
-            const heroForward = hero.GetForwardVector();
-            const spawnPos = Vector(
-                heroPos.x + heroForward.x * 500,
-                heroPos.y + heroForward.y * 500,
-                heroPos.z
-            );
+            // 使用固定的战斗区域中心点创建副本
+            const spawnPos = BATTLE_ROOM_SPAWN;
             
             const manager = GetDungeonManager();
             const instanceId = manager.CreateDungeon(dungeonId, spawnPos);
