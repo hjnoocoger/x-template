@@ -5,6 +5,9 @@
 import { EquipmentVaultSystem } from '../systems/equipment/vault_system';
 import { ClassSystem } from '../systems/player/class_system';
 import { ExternalRewardItem, ExternalItemType, EquipmentAttribute } from '../dungeon/external_reward_pool';
+import { GetDungeonManager } from '../dungeons/DungeonManager';
+import { BATTLE_ROOM_SPAWN } from '../systems/camera/camera_zones';
+import { DUNGEON_CONFIGS } from '../dungeons/configs/index';
 
 // 最后菜单触发时间记录
 const lastMenuTriggerTime: { [key: number]: number } = {};
@@ -87,10 +90,20 @@ export class EventHandlers {
                     
                     lastMenuTriggerTime[i] = currentTime;
                     
-                    CustomGameEventManager.Send_ServerToPlayer<{}>(
+                    // 构建副本列表
+                    const dungeonList: Array<{id: string, name: string, description: string}> = [];
+                    for (const [id, config] of Object.entries(DUNGEON_CONFIGS)) {
+                        dungeonList.push({
+                            id: id,
+                            name: config.mapName,
+                            description: `探索${config.mapName}的秘密`
+                        });
+                    }
+                    
+                    CustomGameEventManager.Send_ServerToPlayer(
                         PlayerResource.GetPlayer(i)!,
                         "show_dungeon_menu",
-                        {}
+                        { dungeonList: dungeonList }
                     );
                 }
             }
@@ -194,6 +207,29 @@ export class EventHandlers {
             } else if (dungeonType === "C") {
                 GameRules.SendCustomMessage(
                     `<font color='#FFAA00'>副本C开发中，敬请期待！</font>`,
+                    playerId,
+                    0
+                );
+            }
+        });
+
+        // 新增：处理直接进入副本的请求（来自动态UI）
+        CustomGameEventManager.RegisterListener("request_enter_dungeon", (userId, event: any) => {
+            const playerId = event.PlayerID as PlayerID;
+            const dungeonId = event.dungeonId as string;
+            
+            print(`[EventHandlers] 玩家 ${playerId} 请求进入副本: ${dungeonId}`);
+            
+            const manager = GetDungeonManager();
+            const instanceId = manager.CreateDungeon(dungeonId, BATTLE_ROOM_SPAWN);
+            
+            if (instanceId) {
+                manager.EnterDungeon(playerId, instanceId);
+                print(`[EventHandlers] 玩家 ${playerId} 成功进入副本 ${instanceId}`);
+            } else {
+                print(`[EventHandlers] 副本创建失败: ${dungeonId}`);
+                GameRules.SendCustomMessage(
+                    `<font color='#FF0000'>副本创建失败，请检查配置</font>`,
                     playerId,
                     0
                 );
