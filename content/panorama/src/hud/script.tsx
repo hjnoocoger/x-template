@@ -609,7 +609,7 @@ const Root: FC = () => {
     useEffect(() => {
         $.Msg('[Root] 注册事件监听器');
         
-        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (data: ShowDungeonMenuEvent) => {
+        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (_data: ShowDungeonMenuEvent) => {
             $.Msg('[Root] 收到 show_dungeon_menu 事件');
             setMenuVisible(true);
         });
