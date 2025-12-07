@@ -1,6 +1,5 @@
 import { GetDungeonManager } from './DungeonManager';
 import { GetAllDungeonIds } from './configs/index';
-import { BATTLE_ROOM_SPAWN } from '../systems/camera/camera_zones';
 
 /**
  * 获取执行命令的玩家ID
@@ -32,23 +31,8 @@ export function RegisterDungeonCommands(): void {
                 return;
             }
             
-            const hero = PlayerResource.GetSelectedHeroEntity(playerId);
-            if (!hero) {
-                print('[命令] 错误：找不到英雄');
-                return;
-            }
-            
-            // 在英雄前方500单位创建副本
-            const heroPos = hero.GetAbsOrigin();
-            const heroForward = hero.GetForwardVector();
-            const spawnPos = Vector(
-                heroPos.x + heroForward.x * 500,
-                heroPos.y + heroForward.y * 500,
-                heroPos.z
-            );
-            
             const manager = GetDungeonManager();
-            const instanceId = manager.CreateDungeon(dungeonId, spawnPos);
+            const instanceId = manager.CreateDungeon(dungeonId);
             
             if (instanceId) {
                 print(`[命令] 副本创建成功: ${instanceId}`);
@@ -116,17 +100,8 @@ export function RegisterDungeonCommands(): void {
                 return;
             }
             
-            const hero = PlayerResource.GetSelectedHeroEntity(playerId);
-            if (! hero) {
-                print('[命令] 错误：找不到英雄');
-                return;
-            }
-            
-            // 在副本区域创建副本（所有副本都在统一的BATTLE_ROOM区域）
-            const spawnPos = BATTLE_ROOM_SPAWN;
-            
             const manager = GetDungeonManager();
-            const instanceId = manager.CreateDungeon(dungeonId, spawnPos);
+            const instanceId = manager.CreateDungeon(dungeonId);
             
             if (instanceId) {
                 manager.EnterDungeon(playerId, instanceId);

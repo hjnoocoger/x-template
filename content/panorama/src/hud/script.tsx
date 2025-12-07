@@ -4,6 +4,7 @@ import 'panorama-polyfill-x/lib/console';
 import 'panorama-polyfill-x/lib/timers';
 import { ExternalRewardItem } from "./../../../../game/scripts/src/dungeon/external_reward_pool";
 import { VaultUI } from './vault_ui';
+import { DungeonInfo, ShowDungeonMenuEvent } from './../../../../shared/dungeon_events';
 
 import '../utils/hide-default-hud';
 import { RewardSelection } from "./reward_selection";
@@ -162,6 +163,26 @@ const CameraOverlay: FC = () => {
 
 const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
     const [selectedDungeon, setSelectedDungeon] = useState<string | null>(null);
+    const [dungeonList, setDungeonList] = useState<DungeonInfo[]>([]);
+
+    useEffect(() => {
+        if (visible) {
+            $.Msg('[DungeonMenu] 菜单可见，等待副本列表数据');
+        }
+    }, [visible]);
+
+    useEffect(() => {
+        const listener = GameEvents.Subscribe('show_dungeon_menu', (data: ShowDungeonMenuEvent) => {
+            $.Msg('[DungeonMenu] 收到副本列表数据:', data);
+            if (data && data.dungeons) {
+                setDungeonList(data.dungeons);
+            }
+        });
+
+        return () => {
+            GameEvents.Unsubscribe(listener);
+        };
+    }, []);
 
     const selectDungeon = (dungeonType: string) => {
         $.Msg(`[DungeonMenu] 点击了副本: ${dungeonType}`);
@@ -430,6 +451,7 @@ const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, o
 
     // 副本选择界面
     $.Msg('[DungeonMenu] 渲染副本选择界面');
+    $.Msg(`[DungeonMenu] 副本列表数量: ${dungeonList.length}`);
     
     return (
         <Panel style={{
@@ -454,28 +476,48 @@ const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, o
                     marginBottom: '20px' 
                 }} />
                 
-                {/* 副本A */}
-                <Panel style={{
-                    height: '100px',
-                    backgroundColor: '#00ff00',
-                    border: '3px solid #ffffff',
-                    marginBottom: '15px',
-                    padding: '15px',
-                    flowChildren: 'down',
-                }} onactivate={() => selectDungeon('A')}>
-                    <Label text="副本 A" style={{ fontSize: '32px', color: '#000000' }} />
-                    <Label text="点击选择难度" style={{ fontSize: '20px', color: '#000000' }} />
-                </Panel>
+                {/* 动态显示副本列表 */}
+                {dungeonList.map((dungeon, index) => (
+                    <Panel key={dungeon.id} style={{
+                        height: '80px',
+                        backgroundColor: index === 0 ? '#00ff0088' : '#666666aa',
+                        border: '3px solid #ffffff',
+                        marginBottom: '15px',
+                        padding: '15px',
+                        flowChildren: 'down',
+                    }} onactivate={() => selectDungeon(dungeon.id)}>
+                        <Label text={dungeon.name} style={{ fontSize: '28px', color: '#ffffff' }} />
+                        <Label text={`ID: ${dungeon.id}`} style={{ fontSize: '18px', color: '#cccccc' }} />
+                    </Panel>
+                ))}
                 
-                {/* 副本B */}
-                <Panel style={{
-                    height: '80px',
-                    backgroundColor: '#666666',
-                    marginBottom: '10px',
-                    padding: '15px',
-                }} onactivate={() => selectDungeon('B')}>
-                    <Label text="副本 B (测试开放)" style={{ fontSize: '28px', color: '#ffffff' }} />
-                </Panel>
+                {/* 兼容性：如果没有副本数据，显示默认的副本A和副本B */}
+                {dungeonList.length === 0 && (
+                    <>
+                        {/* 副本A */}
+                        <Panel style={{
+                            height: '100px',
+                            backgroundColor: '#00ff00',
+                            border: '3px solid #ffffff',
+                            marginBottom: '15px',
+                            padding: '15px',
+                            flowChildren: 'down',
+                        }} onactivate={() => selectDungeon('A')}>
+                            <Label text="副本 A" style={{ fontSize: '32px', color: '#000000' }} />
+                            <Label text="点击选择难度" style={{ fontSize: '20px', color: '#000000' }} />
+                        </Panel>
+                        
+                        {/* 副本B */}
+                        <Panel style={{
+                            height: '80px',
+                            backgroundColor: '#666666',
+                            marginBottom: '10px',
+                            padding: '15px',
+                        }} onactivate={() => selectDungeon('B')}>
+                            <Label text="副本 B (测试开放)" style={{ fontSize: '28px', color: '#ffffff' }} />
+                        </Panel>
+                    </>
+                )}
                 
                 {/* 关闭按钮 */}
                 <Panel style={{
@@ -567,7 +609,7 @@ const Root: FC = () => {
     useEffect(() => {
         $.Msg('[Root] 注册事件监听器');
         
-        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', () => {
+        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (_data: ShowDungeonMenuEvent) => {
             $.Msg('[Root] 收到 show_dungeon_menu 事件');
             setMenuVisible(true);
         });
