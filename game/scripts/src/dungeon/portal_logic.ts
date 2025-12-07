@@ -1,6 +1,5 @@
 import { BaseAbility, registerAbility } from "../utils/dota_ts_adapter";
 import { GetDungeonManager } from "../dungeons/DungeonManager";
-import { BATTLE_ROOM_SPAWN } from "../systems/camera/camera_zones";
 
 @registerAbility()
 export class portal_logic extends BaseAbility {
@@ -54,10 +53,8 @@ export class portal_logic extends BaseAbility {
         // 使用默认副本ID（可以根据需要改为菜单选择）
         const dungeonId = 'test_simple';
         
-        // 在副本区域创建副本实例（所有副本都在统一的BATTLE_ROOM区域）
-        const spawnPosition = BATTLE_ROOM_SPAWN;
-        
-        const instanceId = manager.CreateDungeon(dungeonId, spawnPosition);
+        // 在固定的副本区域创建副本实例
+        const instanceId = manager.CreateDungeon(dungeonId);
         
         if (instanceId) {
             // 进入副本（会自动切换摄像头）

@@ -2,6 +2,7 @@ import { DungeonMapData } from './types';
 import { DungeonInstance, DungeonInstanceState } from './DungeonInstance';
 import { GetDungeonConfig } from './configs/index';
 import { CameraSystem } from '../systems/camera/camera_system';
+import { DUNGEON_SPAWN_CENTER, DUNGEON_INSTANCE_OFFSET_X } from './configs/dungeon_constants';
 
 /**
  * 副本管理器
@@ -29,8 +30,9 @@ export class DungeonManager {
     
     /**
      * 创建新的副本实例
+     * 所有副本在固定的 BATTLE_ROOM 区域创建，多个实例在X轴上偏移避免重叠
      */
-    public CreateDungeon(dungeonId: string, spawnPosition: Vector): string | null {
+    public CreateDungeon(dungeonId: string): string | null {
         const config = GetDungeonConfig(dungeonId);
         if (!config) {
             print(`[DungeonManager] 错误：找不到副本配置 ${dungeonId}`);
@@ -38,6 +40,15 @@ export class DungeonManager {
         }
         
         const instanceId = `${dungeonId}_${this.nextInstanceId++}`;
+        
+        // 计算副本生成位置：使用固定中心点，多个实例在X轴偏移
+        const instanceCount = this.instances.size;
+        const offsetX = instanceCount * DUNGEON_INSTANCE_OFFSET_X;
+        const spawnPosition = Vector(
+            DUNGEON_SPAWN_CENTER.x + offsetX,
+            DUNGEON_SPAWN_CENTER.y,
+            DUNGEON_SPAWN_CENTER.z
+        );
         
         const instance = new DungeonInstance(instanceId, spawnPosition, config);
         instance.Initialize();

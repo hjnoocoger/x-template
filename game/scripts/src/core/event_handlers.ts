@@ -5,6 +5,8 @@
 import { EquipmentVaultSystem } from '../systems/equipment/vault_system';
 import { ClassSystem } from '../systems/player/class_system';
 import { ExternalRewardItem, ExternalItemType, EquipmentAttribute } from '../dungeon/external_reward_pool';
+import { GetAllDungeonIds, GetDungeonConfig } from '../dungeons/configs/index';
+import { GetDungeonManager } from '../dungeons/DungeonManager';
 
 // 最后菜单触发时间记录
 const lastMenuTriggerTime: { [key: number]: number } = {};
@@ -87,10 +89,16 @@ export class EventHandlers {
                     
                     lastMenuTriggerTime[i] = currentTime;
                     
-                    CustomGameEventManager.Send_ServerToPlayer<{}>(
+                    // 获取所有副本配置并发送给客户端
+                    const dungeonList = GetAllDungeonIds().map(id => ({
+                        id: id,
+                        name: GetDungeonConfig(id)?.mapName || id
+                    }));
+                    
+                    CustomGameEventManager.Send_ServerToPlayer(
                         PlayerResource.GetPlayer(i)!,
                         "show_dungeon_menu",
-                        {}
+                        { dungeons: dungeonList }
                     );
                 }
             }
@@ -161,6 +169,7 @@ export class EventHandlers {
             
             print(`[EventHandlers] 玩家 ${playerId} 选择副本: ${dungeonType}, 难度: ${difficulty}`);
             
+            // 兼容旧系统：副本A和副本B
             if (dungeonType === "A") {
                 if (GameRules.SimpleDungeon) {
                     (GameRules.SimpleDungeon as any).StartDungeon(playerId, difficulty);
@@ -191,12 +200,39 @@ export class EventHandlers {
                         0
                     );
                 }
-            } else if (dungeonType === "C") {
-                GameRules.SendCustomMessage(
-                    `<font color='#FFAA00'>副本C开发中，敬请期待！</font>`,
-                    playerId,
-                    0
-                );
+            } else {
+                // 使用新的副本管理器系统
+                const manager = GetDungeonManager();
+                const config = GetDungeonConfig(dungeonType);
+                
+                if (!config) {
+                    GameRules.SendCustomMessage(
+                        `<font color='#FF0000'>❌ 找不到副本配置: ${dungeonType}</font>`,
+                        playerId,
+                        0
+                    );
+                    return;
+                }
+                
+                // 创建副本实例
+                const instanceId = manager.CreateDungeon(dungeonType);
+                
+                if (instanceId) {
+                    // 进入副本
+                    manager.EnterDungeon(playerId, instanceId);
+                    
+                    GameRules.SendCustomMessage(
+                        `<font color='#00FF00'>正在进入副本: ${config.mapName}...</font>`,
+                        playerId,
+                        0
+                    );
+                } else {
+                    GameRules.SendCustomMessage(
+                        `<font color='#FF0000'>❌ 副本创建失败</font>`,
+                        playerId,
+                        0
+                    );
+                }
             }
         });
     }
