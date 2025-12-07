@@ -306,9 +306,9 @@ export class DungeonInstance {
     }
     
     /**
-     * 获取生成器
+     * 网格坐标转世界坐标
      */
-    public GetGenerator(): DungeonGenerator {
-        return this.generator;
+    public GridToWorld(gridX: number, gridY: number): Vector {
+        return this.generator.GridToWorld(gridX, gridY);
     }
 }

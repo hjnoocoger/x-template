@@ -114,20 +114,19 @@ export class DungeonManager {
         const hero = PlayerResource.GetSelectedHeroEntity(playerId);
         if (!hero) return;
         
-        // 获取副本配置和生成器
+        // 获取副本配置
         const config = instance.GetMapData();
-        const generator = instance.GetGenerator();
         
         let entrancePos: Vector;
         
         // 优先使用配置的 entryPoints
         if (config.entryPoints && config.entryPoints.length > 0) {
             const entryPoint = config.entryPoints[0];
-            entrancePos = generator.GridToWorld(entryPoint.x, entryPoint.y);
+            entrancePos = instance.GridToWorld(entryPoint.x, entryPoint.y);
             print(`[DungeonManager] 使用配置的入口点 (${entryPoint.x}, ${entryPoint.y})`);
         } else {
             // 降级方案：在地图左侧外面，Y轴中央
-            entrancePos = generator.GridToWorld(-2, 10);
+            entrancePos = instance.GridToWorld(-2, 10);
             print(`[DungeonManager] 使用默认入口点`);
         }
         

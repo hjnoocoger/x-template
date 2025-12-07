@@ -98,7 +98,7 @@ export class EventHandlers {
                         };
                     });
                     
-                    CustomGameEventManager.Send_ServerToPlayer<{}>(
+                    CustomGameEventManager.Send_ServerToPlayer(
                         PlayerResource.GetPlayer(i)!,
                         "show_dungeon_menu",
                         { 
