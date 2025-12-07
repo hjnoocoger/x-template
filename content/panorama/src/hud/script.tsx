@@ -160,276 +160,37 @@ const CameraOverlay: FC = () => {
 
 // ==================== 副本菜单组件 ====================
 
-const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+interface DungeonInfo {
+    id: string;
+    name: string;
+    description: string;
+}
+
+interface ShowDungeonMenuEvent {
+    dungeons?: DungeonInfo[];
+}
+
+const DungeonMenu: FC<{ visible: boolean; dungeons: DungeonInfo[]; onClose: () => void }> = ({ visible, dungeons, onClose }) => {
     const [selectedDungeon, setSelectedDungeon] = useState<string | null>(null);
 
-    const selectDungeon = (dungeonType: string) => {
-        $.Msg(`[DungeonMenu] 点击了副本: ${dungeonType}`);
+    const selectDungeon = (dungeonId: string) => {
+        $.Msg(`[DungeonMenu] 选择副本: ${dungeonId}`);
         
-        if (dungeonType === "A") {
-            $.Msg('[DungeonMenu] 设置状态为 A');
-            setSelectedDungeon("A");
-        } else {
-            // @ts-ignore
-            GameEvents.SendCustomGameEventToServer('select_dungeon', {
-                PlayerID: Players.GetLocalPlayer(),
-                dungeon_type: dungeonType,
-                difficulty: "normal_1"
-            });
-            onClose();
-        }
-    };
-
-    const selectDifficulty = (difficulty: string) => {
-        $.Msg(`[DungeonMenu] 选择难度: ${difficulty}`);
-        
+        // 发送进入副本请求到服务端
+        // Note: GameEvents.SendCustomGameEventToServer is part of Panorama's API
+        // and doesn't have complete TypeScript definitions, hence the ts-ignore
         // @ts-ignore
-        GameEvents.SendCustomGameEventToServer('select_dungeon', {
+        GameEvents.SendCustomGameEventToServer('request_enter_dungeon', {
             PlayerID: Players.GetLocalPlayer(),
-            dungeon_type: selectedDungeon,
-            difficulty: difficulty
+            dungeonId: dungeonId
         });
         
-        setSelectedDungeon(null);
         onClose();
-    };
-
-    const goBack = () => {
-        $.Msg('[DungeonMenu] 返回');
-        setSelectedDungeon(null);
     };
 
     if (!visible) return null;
 
-    $.Msg(`[DungeonMenu] 渲染，selectedDungeon = ${selectedDungeon}`);
-
-    // 难度选择界面
-    if (selectedDungeon === "A") {
-        $.Msg('[DungeonMenu] 渲染难度选择界面');
-        
-        return (
-            <Panel style={{
-                width: '100%',
-                height: '100%',
-                align: 'center center',
-                zIndex: 10000,
-                backgroundColor: '#000000dd',
-            }}>
-                <Panel style={{
-                    width: '900px',
-                    height: '650px',
-                    backgroundColor: '#1a1a2edd',
-                    border: '3px solid #ffd700',
-                    padding: '20px',
-                    flowChildren: 'down',
-                }}>
-                    <Label text="选择难度" style={{ 
-                        fontSize: '42px', 
-                        color: '#ffd700', 
-                        textAlign: 'center', 
-                        marginBottom: '20px' 
-                    }} />
-                    
-                    {/* 简单难度 */}
-                    <Label text="简单" style={{ 
-                        fontSize: '32px', 
-                        color: '#00ff00', 
-                        marginBottom: '10px',
-                        marginTop: '10px'
-                    }} />
-                    <Panel style={{ flowChildren: 'right', marginBottom: '15px', width: '100%' }}>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#00ff0088', 
-                            border: '2px solid #00ff00',
-                            marginRight: '10px', 
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('easy_1')}>
-                            <Label text="1 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#00ff00aa', 
-                            border: '2px solid #00ff00',
-                            marginRight: '10px',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('easy_2')}>
-                            <Label text="2 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#00ff00cc', 
-                            border: '2px solid #00ff00',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('easy_3')}>
-                            <Label text="3 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                    </Panel>
-                    
-                    {/* 普通难度 */}
-                    <Label text="普通" style={{ 
-                        fontSize: '32px', 
-                        color: '#ffaa00', 
-                        marginBottom: '10px',
-                        marginTop: '10px'
-                    }} />
-                    <Panel style={{ flowChildren: 'right', marginBottom: '15px', width: '100%' }}>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#ffaa0088', 
-                            border: '2px solid #ffaa00',
-                            marginRight: '10px',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('normal_1')}>
-                            <Label text="1 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#ffaa00aa', 
-                            border: '2px solid #ffaa00',
-                            marginRight: '10px',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('normal_2')}>
-                            <Label text="2 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#ffaa00cc', 
-                            border: '2px solid #ffaa00',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('normal_3')}>
-                            <Label text="3 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                    </Panel>
-                    
-                    {/* 困难难度 */}
-                    <Label text="困难" style={{ 
-                        fontSize: '32px', 
-                        color: '#ff0000', 
-                        marginBottom: '10px',
-                        marginTop: '10px'
-                    }} />
-                    <Panel style={{ flowChildren: 'right', marginBottom: '15px', width: '100%' }}>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#ff000088', 
-                            border: '2px solid #ff0000',
-                            marginRight: '10px',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('hard_1')}>
-                            <Label text="1 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#ff0000aa', 
-                            border: '2px solid #ff0000',
-                            marginRight: '10px',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('hard_2')}>
-                            <Label text="2 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                        <Panel style={{ 
-                            width: '280px', 
-                            height: '70px', 
-                            backgroundColor: '#ff0000cc', 
-                            border: '2px solid #ff0000',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={() => selectDifficulty('hard_3')}>
-                            <Label text="3 星" style={{ 
-                                fontSize: '32px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                    </Panel>
-                    
-                    {/* 返回按钮 */}
-                    <Panel style={{
-                        width: '100%',
-                        horizontalAlign: 'center',
-                        marginTop: '20px'
-                    }}>
-                        <Panel style={{ 
-                            width: '200px', 
-                            height: '60px', 
-                            backgroundColor: '#666666',
-                            border: '2px solid #999999',
-                            verticalAlign: 'center',
-                            horizontalAlign: 'center'
-                        }} onactivate={goBack}>
-                            <Label text="返回" style={{ 
-                                fontSize: '28px', 
-                                color: '#ffffff',
-                                horizontalAlign: 'center',
-                                verticalAlign: 'center'
-                            }} />
-                        </Panel>
-                    </Panel>
-                </Panel>
-            </Panel>
-        );
-    }
-
-    // 副本选择界面
-    $.Msg('[DungeonMenu] 渲染副本选择界面');
+    $.Msg(`[DungeonMenu] 渲染副本列表，共 ${dungeons.length} 个副本`);
     
     return (
         <Panel style={{
@@ -441,7 +202,7 @@ const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, o
         }}>
             <Panel style={{
                 width: '600px',
-                height: '400px',
+                minHeight: '400px',
                 backgroundColor: '#1a1a2edd',
                 border: '3px solid #ffd700',
                 padding: '20px',
@@ -454,28 +215,20 @@ const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, o
                     marginBottom: '20px' 
                 }} />
                 
-                {/* 副本A */}
-                <Panel style={{
-                    height: '100px',
-                    backgroundColor: '#00ff00',
-                    border: '3px solid #ffffff',
-                    marginBottom: '15px',
-                    padding: '15px',
-                    flowChildren: 'down',
-                }} onactivate={() => selectDungeon('A')}>
-                    <Label text="副本 A" style={{ fontSize: '32px', color: '#000000' }} />
-                    <Label text="点击选择难度" style={{ fontSize: '20px', color: '#000000' }} />
-                </Panel>
-                
-                {/* 副本B */}
-                <Panel style={{
-                    height: '80px',
-                    backgroundColor: '#666666',
-                    marginBottom: '10px',
-                    padding: '15px',
-                }} onactivate={() => selectDungeon('B')}>
-                    <Label text="副本 B (测试开放)" style={{ fontSize: '28px', color: '#ffffff' }} />
-                </Panel>
+                {/* 动态渲染副本列表 */}
+                {dungeons.map((dungeon) => (
+                    <Panel key={dungeon.id} style={{
+                        height: '100px',
+                        backgroundColor: '#4a4a6a',
+                        border: '3px solid #8888aa',
+                        marginBottom: '15px',
+                        padding: '15px',
+                        flowChildren: 'down',
+                    }} onactivate={() => selectDungeon(dungeon.id)}>
+                        <Label text={dungeon.name} style={{ fontSize: '32px', color: '#ffffff' }} />
+                        <Label text={dungeon.description} style={{ fontSize: '20px', color: '#cccccc' }} />
+                    </Panel>
+                ))}
                 
                 {/* 关闭按钮 */}
                 <Panel style={{
@@ -507,6 +260,7 @@ const DungeonMenu: FC<{ visible: boolean; onClose: () => void }> = ({ visible, o
 
 const Root: FC = () => {
     const [menuVisible, setMenuVisible] = useState(false);
+    const [dungeonList, setDungeonList] = useState<DungeonInfo[]>([]);
     const [rewardVisible, setRewardVisible] = useState(false);
     const [vaultVisible, setVaultVisible] = useState(false);
     const [equipmentVisible, setEquipmentVisible] = useState(false);
@@ -567,8 +321,19 @@ const Root: FC = () => {
     useEffect(() => {
         $.Msg('[Root] 注册事件监听器');
         
-        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', () => {
+        const listenerMenu = GameEvents.Subscribe('show_dungeon_menu', (data: ShowDungeonMenuEvent) => {
             $.Msg('[Root] 收到 show_dungeon_menu 事件');
+            $.Msg(`[Root] 副本数据: ${JSON.stringify(data)}`);
+            
+            // 验证并设置副本列表，确保数据有效
+            const dungeons = data?.dungeons ?? [];
+            if (!Array.isArray(dungeons)) {
+                $.Msg('[Root] 警告: 副本数据格式错误，使用空列表');
+                setDungeonList([]);
+            } else {
+                setDungeonList(dungeons);
+            }
+            
             setMenuVisible(true);
         });
 
@@ -618,7 +383,7 @@ const Root: FC = () => {
                 <>
                     <RageBar />
 
-                    <DungeonMenu visible={menuVisible} onClose={() => {
+                    <DungeonMenu visible={menuVisible} dungeons={dungeonList} onClose={() => {
                         $.Msg('[Root] 关闭副本菜单');
                         setMenuVisible(false);
                     }} />

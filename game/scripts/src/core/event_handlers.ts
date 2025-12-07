@@ -5,6 +5,25 @@
 import { EquipmentVaultSystem } from '../systems/equipment/vault_system';
 import { ClassSystem } from '../systems/player/class_system';
 import { ExternalRewardItem, ExternalItemType, EquipmentAttribute } from '../dungeon/external_reward_pool';
+import { GetAllDungeonIds, GetDungeonConfig } from '../dungeons/configs/index';
+import { GetDungeonManager } from '../dungeons/DungeonManager';
+import { BATTLE_ROOM_SPAWN } from '../systems/camera/camera_zones';
+
+// 事件类型定义
+interface RequestEnterDungeonEvent {
+    PlayerID: PlayerID;
+    dungeonId: string;
+}
+
+interface DungeonListData {
+    id: string;
+    name: string;
+    description: string;
+}
+
+interface ShowDungeonMenuData {
+    dungeons: DungeonListData[];
+}
 
 // 最后菜单触发时间记录
 const lastMenuTriggerTime: { [key: number]: number } = {};
@@ -87,10 +106,20 @@ export class EventHandlers {
                     
                     lastMenuTriggerTime[i] = currentTime;
                     
-                    CustomGameEventManager.Send_ServerToPlayer<{}>(
+                    // 发送副本列表到客户端
+                    const dungeonList = GetAllDungeonIds().map(id => {
+                        const config = GetDungeonConfig(id);
+                        return {
+                            id: id,
+                            name: config?.mapName || id,
+                            description: `副本ID: ${id}`
+                        };
+                    });
+                    
+                    CustomGameEventManager.Send_ServerToPlayer<ShowDungeonMenuData>(
                         PlayerResource.GetPlayer(i)!,
                         "show_dungeon_menu",
-                        {}
+                        { dungeons: dungeonList }
                     );
                 }
             }
@@ -151,6 +180,42 @@ export class EventHandlers {
      * 注册副本相关事件
      */
     private static RegisterDungeonEvents(): void {
+        // 监听传送门进入副本请求
+        CustomGameEventManager.RegisterListener("request_enter_dungeon", (userId, event: RequestEnterDungeonEvent) => {
+            const playerId = event.PlayerID;
+            const dungeonId = event.dungeonId;
+            
+            print(`[EventHandlers] 玩家 ${playerId} 请求进入副本: ${dungeonId}`);
+            
+            // 验证副本配置是否存在
+            const config = GetDungeonConfig(dungeonId);
+            if (!config) {
+                print(`[EventHandlers] 副本配置不存在: ${dungeonId}`);
+                GameRules.SendCustomMessage(
+                    `<font color='#FF0000'>❌ 副本配置不存在: ${dungeonId}</font>`,
+                    playerId,
+                    0
+                );
+                return;
+            }
+            
+            // 使用固定的战斗区域位置创建副本
+            const manager = GetDungeonManager();
+            const instanceId = manager.CreateDungeon(dungeonId, BATTLE_ROOM_SPAWN);
+            
+            if (instanceId) {
+                manager.EnterDungeon(playerId, instanceId);
+                print(`[EventHandlers] 玩家 ${playerId} 成功进入副本 ${instanceId}`);
+            } else {
+                print(`[EventHandlers] 副本创建失败: ${dungeonId} (可能是生成位置问题或副本管理器错误)`);
+                GameRules.SendCustomMessage(
+                    `<font color='#FF0000'>❌ 副本创建失败，请稍后重试</font>`,
+                    playerId,
+                    0
+                );
+            }
+        });
+        
         CustomGameEventManager.RegisterListener("select_dungeon", (userId, event: any) => {
             const playerId = event.PlayerID as PlayerID;
             const dungeonType = event.dungeon_type as string;
